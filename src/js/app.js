@@ -21,16 +21,17 @@ App = {
    return App.initWeb3();
   },
 
-  initWeb3: function() {
-	if(typeof web3 !== 'undefined'){
-    App.web3Provider = web3.currentProvider;
-    web3 = new Web3(web3.currentProvider);
-  }else{
-    App.web3Provider = new web3.providers.HttpProvider('http://localhost:8545');
-    web3 = new Web3(App.web3Provider);
-  }
+  initWeb3: function() {//web3 설정
 
-    return App.initContract();
+    if(typeof web3 !== 'undefined'){
+      App.web3Provider = web3.currentProvider;
+      web3 = new Web3(web3.currentProvider);
+    }else{
+      App.web3Provider = new web3.providers.HttpProvider('HTTP://127.0.0.1:8545');
+      web3 = new Web3(App.web3Provider);
+    }
+   
+      return App.initContract();
   },
 
   initContract: function() {
@@ -46,10 +47,24 @@ App = {
     var price = $('#price').val();
     var age = $('#age').val();
 
-    console.log(id);
-    console.log(name);
-    console.log(price);
-    console.log(age);
+    web3.eth.getAccounts(function(error, accounts){
+      if(error){
+        console.log(error);     
+      }
+
+      var account = accounts[0];
+
+      App.contracts.RealEstate.deployed().then(function(instance){//컨트랙트에 접근하는 코드
+        var nameUtf8Encoded = utf8.encode(name);
+        return instance.buyRealEstate(id, web3.toHex(nameUtf8Encoded), age, {from: account, value: price});//buyRealEstate함수가 payable이라서 파라미터를 하나 더 보낸다.
+       }).then(function(){
+        $('#name').val('');
+        $('#age').val('');
+        $('#buyModal').modal('hide');
+      }).catch(function(err){
+        console.log(err.message);
+      });     
+    });
   },
 
   loadRealEstates: function() {
